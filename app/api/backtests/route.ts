@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
     // Serialize the data to ensure JSON compatibility
     const serializedBacktests = backtests.map((backtest) => ({
       ...backtest,
-      created_at: backtest.created_at?.toISOString(),
-      updated_at: backtest.updated_at?.toISOString(),
-      start_date: backtest.start_date?.toISOString(),
-      end_date: backtest.end_date?.toISOString(),
+      created_at: backtest.created_at ? new Date(backtest.created_at).toISOString() : null,
+      updated_at: backtest.updated_at ? new Date(backtest.updated_at).toISOString() : null,
+      start_date: backtest.start_date ? new Date(backtest.start_date).toISOString() : null,
+      end_date: backtest.end_date ? new Date(backtest.end_date).toISOString() : null,
     }))
 
     return NextResponse.json(serializedBacktests)
@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
     // Serialize the response
     const serializedBacktest = {
       ...backtest,
-      created_at: backtest.created_at?.toISOString(),
-      updated_at: backtest.updated_at?.toISOString(),
-      start_date: backtest.start_date?.toISOString(),
-      end_date: backtest.end_date?.toISOString(),
+      created_at: backtest.created_at ? new Date(backtest.created_at).toISOString() : null,
+      updated_at: backtest.updated_at ? new Date(backtest.updated_at).toISOString() : null,
+      start_date: backtest.start_date ? new Date(backtest.start_date).toISOString() : null,
+      end_date: backtest.end_date ? new Date(backtest.end_date).toISOString() : null,
     }
 
     return NextResponse.json(serializedBacktest)
