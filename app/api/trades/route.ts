@@ -17,12 +17,14 @@ export async function GET(request: NextRequest) {
       symbol: symbol && symbol !== "" ? symbol : undefined,
     })
 
+    // Ensure trades is an array and handle null/undefined
+    const tradesArray = Array.isArray(trades) ? trades : []
+
     // Serialize the data to ensure JSON compatibility
-    const serializedTrades = trades.map((trade) => ({
+    const serializedTrades = tradesArray.map((trade) => ({
       ...trade,
-      created_at: trade.created_at?.toISOString(),
-      updated_at: trade.updated_at?.toISOString(),
-      executed_at: trade.executed_at?.toISOString(),
+      timestamp: trade.timestamp ? new Date(trade.timestamp).toISOString() : null,
+      created_at: trade.created_at ? new Date(trade.created_at).toISOString() : null,
     }))
 
     return NextResponse.json(serializedTrades)

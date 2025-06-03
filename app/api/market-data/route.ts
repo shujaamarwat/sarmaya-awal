@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getMarketDataBySymbol } from "@/lib/data/market-data"
+import { getMarketData } from "@/lib/data/market-data"
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,20 +8,20 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
 
-    if (!symbol) {
-      return NextResponse.json({ error: "Symbol is required" }, { status: 400 })
+    if (!symbol || !startDate || !endDate) {
+      return NextResponse.json({ error: "Symbol, startDate, and endDate are required" }, { status: 400 })
     }
 
-    const marketData = await getMarketDataBySymbol(symbol, {
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-    })
+    const marketData = await getMarketData(symbol, new Date(startDate), new Date(endDate))
+
+    // Ensure marketData is an array and handle null/undefined
+    const dataArray = Array.isArray(marketData) ? marketData : []
 
     // Serialize the data to ensure JSON compatibility
-    const serializedData = marketData.map((data) => ({
+    const serializedData = dataArray.map((data) => ({
       ...data,
-      date: data.date?.toISOString(),
-      created_at: data.created_at?.toISOString(),
+      date: data.date ? new Date(data.date).toISOString() : null,
+      created_at: data.created_at ? new Date(data.created_at).toISOString() : null,
     }))
 
     return NextResponse.json(serializedData)

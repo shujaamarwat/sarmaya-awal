@@ -17,12 +17,13 @@ export async function GET(request: NextRequest) {
       limit,
     })
 
+    // Ensure alerts is an array and handle null/undefined
+    const alertsArray = Array.isArray(alerts) ? alerts : []
+
     // Serialize the data to ensure JSON compatibility
-    const serializedAlerts = alerts.map((alert) => ({
+    const serializedAlerts = alertsArray.map((alert) => ({
       ...alert,
-      created_at: alert.created_at?.toISOString(),
-      updated_at: alert.updated_at?.toISOString(),
-      triggered_at: alert.triggered_at?.toISOString(),
+      created_at: alert.created_at ? new Date(alert.created_at).toISOString() : null,
     }))
 
     return NextResponse.json(serializedAlerts)
