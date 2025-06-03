@@ -17,7 +17,15 @@ export async function GET(request: NextRequest) {
       limit,
     })
 
-    return NextResponse.json(alerts)
+    // Serialize the data to ensure JSON compatibility
+    const serializedAlerts = alerts.map((alert) => ({
+      ...alert,
+      created_at: alert.created_at?.toISOString(),
+      updated_at: alert.updated_at?.toISOString(),
+      triggered_at: alert.triggered_at?.toISOString(),
+    }))
+
+    return NextResponse.json(serializedAlerts)
   } catch (error) {
     console.error("Error fetching alerts:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
