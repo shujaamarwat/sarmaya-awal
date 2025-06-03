@@ -70,13 +70,30 @@ export default function DashboardPage() {
     [user?.id, asset],
   )
 
-  // Transform market data for chart
+  // Transform market data for chart with trading signals
   const chartData =
-    marketData?.map((item: any) => ({
-      date: format(new Date(item.date), "MMM"),
-      price: item.close_price,
-      signal: null, // In a real app, you'd calculate signals based on your strategy
-    })) || []
+    marketData?.map((item: any, index: number) => {
+      const price = item.close_price
+      const prevPrice = index > 0 ? marketData[index - 1].close_price : price
+      const rsi = 50 + Math.sin(index * 0.3) * 20 // Mock RSI calculation
+      const ma = price * (0.98 + Math.sin(index * 0.1) * 0.04) // Mock moving average
+
+      // Generate buy/sell signals based on strategy
+      let signal = null
+      if (strategy === "momentum" && rsi < rsiThreshold[0] && price > ma) {
+        signal = "buy"
+      } else if (strategy === "momentum" && rsi > rsiThreshold[1] && price < ma) {
+        signal = "sell"
+      }
+
+      return {
+        date: format(new Date(item.date), "MMM"),
+        price: price,
+        signal: signal,
+        rsi: rsi,
+        ma: ma,
+      }
+    }) || []
 
   const handleRunBacktest = async () => {
     if (!user) return
@@ -167,6 +184,43 @@ export default function DashboardPage() {
     }
   }
 
+  const handleExport = (type: string) => {
+    let data = ""
+    let filename = ""
+
+    if (type === "trades") {
+      const headers = "Date,Action,Symbol,Price,Quantity,P&L\n"
+      const rows =
+        tradeHistory
+          ?.map(
+            (trade: any) =>
+              `${format(new Date(trade.timestamp), "yyyy-MM-dd")},${trade.action},${trade.symbol},${trade.price},${trade.quantity},${trade.pnl || 0}`,
+          )
+          .join("\n") || ""
+      data = headers + rows
+      filename = `trades-${format(new Date(), "yyyy-MM-dd")}.csv`
+    } else if (type === "performance") {
+      const headers = "Date,Price,Signal\n"
+      const rows = chartData.map((row) => `${row.date},${row.price},${row.signal || ""}`).join("\n")
+      data = headers + rows
+      filename = `performance-${asset}-${format(new Date(), "yyyy-MM-dd")}.csv`
+    }
+
+    // Create and download file
+    const blob = new Blob([data], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    window.URL.revokeObjectURL(url)
+
+    toast({
+      title: "Export Complete",
+      description: `${type} data has been exported successfully.`,
+    })
+  }
+
   return (
     <DashboardLayout>
       <div className="flex">
@@ -183,11 +237,11 @@ export default function DashboardPage() {
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => handleExport("performance")}>
                 <FileText className="mr-2 h-4 w-4" />
                 Export PDF
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => handleExport("trades")}>
                 <Download className="mr-2 h-4 w-4" />
                 Export CSV
               </Button>
@@ -377,6 +431,10 @@ export default function DashboardPage() {
                           label: "Price",
                           color: "hsl(var(--chart-1))",
                         },
+                        ma: {
+                          label: "Moving Average",
+                          color: "hsl(var(--chart-2))",
+                        },
                       }}
                       className="h-[400px]"
                     >
@@ -398,8 +456,16 @@ export default function DashboardPage() {
                               } else if (payload?.signal === "sell") {
                                 return <circle {...props} r={6} fill="#ff4444" stroke="#ff4444" />
                               }
-                              return null
+                              return <circle {...props} r={2} fill="var(--color-price)" />
                             }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="ma"
+                            stroke="var(--color-ma)"
+                            strokeWidth={1}
+                            strokeDasharray="5 5"
+                            dot={false}
                           />
                         </LineChart>
                       </ResponsiveContainer>

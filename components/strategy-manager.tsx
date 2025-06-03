@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -71,6 +71,34 @@ export function StrategyManager() {
     },
   })
 
+  // Use useCallback to prevent unnecessary re-renders
+  const updateFormField = useCallback((field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  const updateFormParameter = useCallback((param: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      parameters: { ...prev.parameters, [param]: value },
+    }))
+  }, [])
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      name: "",
+      type: "",
+      description: "",
+      parameters: {
+        rsiThreshold: [30, 70],
+        maWindow: 20,
+        stopLoss: 0.05,
+        takeProfit: 0.15,
+        enableStopLoss: true,
+        enableTakeProfit: true,
+      },
+    })
+  }, [])
+
   const handleCreateStrategy = async () => {
     if (!user) return
 
@@ -87,19 +115,7 @@ export function StrategyManager() {
       })
 
       setIsCreateDialogOpen(false)
-      setFormData({
-        name: "",
-        type: "",
-        description: "",
-        parameters: {
-          rsiThreshold: [30, 70],
-          maWindow: 20,
-          stopLoss: 0.05,
-          takeProfit: 0.15,
-          enableStopLoss: true,
-          enableTakeProfit: true,
-        },
-      })
+      resetForm()
       refetch()
     } catch (error) {
       toast({
@@ -219,14 +235,14 @@ export function StrategyManager() {
         <Input
           id="name"
           value={formData.name}
-          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+          onChange={(e) => updateFormField("name", e.target.value)}
           placeholder="e.g., RSI Momentum"
         />
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="type">Strategy Type</Label>
-        <Select value={formData.type} onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}>
+        <Select value={formData.type} onValueChange={(value) => updateFormField("type", value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select strategy type" />
           </SelectTrigger>
@@ -245,7 +261,7 @@ export function StrategyManager() {
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+          onChange={(e) => updateFormField("description", e.target.value)}
           placeholder="Describe your strategy logic..."
         />
       </div>
@@ -260,12 +276,7 @@ export function StrategyManager() {
           </Label>
           <Slider
             value={formData.parameters.rsiThreshold}
-            onValueChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                parameters: { ...prev.parameters, rsiThreshold: value },
-              }))
-            }
+            onValueChange={(value) => updateFormParameter("rsiThreshold", value)}
             max={100}
             min={0}
             step={1}
@@ -276,12 +287,7 @@ export function StrategyManager() {
           <Label className="text-xs">Moving Average Window: {formData.parameters.maWindow}</Label>
           <Slider
             value={[formData.parameters.maWindow]}
-            onValueChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                parameters: { ...prev.parameters, maWindow: value[0] },
-              }))
-            }
+            onValueChange={(value) => updateFormParameter("maWindow", value[0])}
             max={200}
             min={5}
             step={1}
@@ -292,12 +298,7 @@ export function StrategyManager() {
           <Label className="text-xs">Stop Loss: {(formData.parameters.stopLoss * 100).toFixed(1)}%</Label>
           <Slider
             value={[formData.parameters.stopLoss * 100]}
-            onValueChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                parameters: { ...prev.parameters, stopLoss: value[0] / 100 },
-              }))
-            }
+            onValueChange={(value) => updateFormParameter("stopLoss", value[0] / 100)}
             max={20}
             min={1}
             step={0.1}
@@ -308,12 +309,7 @@ export function StrategyManager() {
           <Switch
             id="enable-stop-loss"
             checked={formData.parameters.enableStopLoss}
-            onCheckedChange={(checked) =>
-              setFormData((prev) => ({
-                ...prev,
-                parameters: { ...prev.parameters, enableStopLoss: checked },
-              }))
-            }
+            onCheckedChange={(checked) => updateFormParameter("enableStopLoss", checked)}
           />
           <Label htmlFor="enable-stop-loss" className="text-xs">
             Enable Stop Loss
@@ -324,12 +320,7 @@ export function StrategyManager() {
           <Switch
             id="enable-take-profit"
             checked={formData.parameters.enableTakeProfit}
-            onCheckedChange={(checked) =>
-              setFormData((prev) => ({
-                ...prev,
-                parameters: { ...prev.parameters, enableTakeProfit: checked },
-              }))
-            }
+            onCheckedChange={(checked) => updateFormParameter("enableTakeProfit", checked)}
           />
           <Label htmlFor="enable-take-profit" className="text-xs">
             Enable Take Profit
