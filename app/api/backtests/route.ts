@@ -12,14 +12,29 @@ export async function GET(request: NextRequest) {
 
     const backtests = await getBacktestsByUserId(Number.parseInt(userId))
 
-    // Serialize the data to ensure JSON compatibility
-    const serializedBacktests = backtests.map((backtest) => ({
-      ...backtest,
-      created_at: backtest.created_at ? new Date(backtest.created_at).toISOString() : null,
-      updated_at: backtest.updated_at ? new Date(backtest.updated_at).toISOString() : null,
-      start_date: backtest.start_date ? new Date(backtest.start_date).toISOString() : null,
-      end_date: backtest.end_date ? new Date(backtest.end_date).toISOString() : null,
-    }))
+    // Safe serialization with proper error handling
+    const serializedBacktests = backtests.map((backtest) => {
+      try {
+        return {
+          ...backtest,
+          created_at: backtest.created_at ? new Date(backtest.created_at).toISOString() : null,
+          updated_at: backtest.updated_at ? new Date(backtest.updated_at).toISOString() : null,
+          start_date: backtest.start_date ? new Date(backtest.start_date).toISOString() : null,
+          end_date: backtest.end_date ? new Date(backtest.end_date).toISOString() : null,
+          completed_at: backtest.completed_at ? new Date(backtest.completed_at).toISOString() : null,
+        }
+      } catch (dateError) {
+        console.error("Date serialization error for backtest:", backtest.id, dateError)
+        return {
+          ...backtest,
+          created_at: null,
+          updated_at: null,
+          start_date: null,
+          end_date: null,
+          completed_at: null,
+        }
+      }
+    })
 
     return NextResponse.json(serializedBacktests)
   } catch (error) {
@@ -33,13 +48,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const backtest = await createBacktest(body)
 
-    // Serialize the response
+    // Safe serialization
     const serializedBacktest = {
       ...backtest,
       created_at: backtest.created_at ? new Date(backtest.created_at).toISOString() : null,
       updated_at: backtest.updated_at ? new Date(backtest.updated_at).toISOString() : null,
       start_date: backtest.start_date ? new Date(backtest.start_date).toISOString() : null,
       end_date: backtest.end_date ? new Date(backtest.end_date).toISOString() : null,
+      completed_at: backtest.completed_at ? new Date(backtest.completed_at).toISOString() : null,
     }
 
     return NextResponse.json(serializedBacktest)

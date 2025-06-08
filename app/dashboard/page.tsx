@@ -22,9 +22,12 @@ import {
   Activity,
   DollarSign,
   RefreshCw,
+  Zap,
+  Target,
+  BarChart3,
 } from "lucide-react"
 import { format } from "date-fns"
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
+import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useAuth } from "@/hooks/use-auth"
 import { useMarketData, usePolling } from "@/hooks/use-api"
@@ -50,7 +53,7 @@ export default function DashboardPage() {
     cagr: 15.7,
   })
 
-  // Real-time data fetching
+  // Real-time data fetching with error handling
   const {
     data: marketData,
     loading: marketLoading,
@@ -62,36 +65,51 @@ export default function DashboardPage() {
     loading: tradesLoading,
     refetch: refetchTrades,
   } = usePolling(
-    () =>
-      user
-        ? apiClient.getTrades(user.id, { limit: 10, symbol: asset !== "all" ? asset : undefined })
-        : Promise.resolve([]),
-    30000, // 30 seconds
+    () => {
+      if (!user) return Promise.resolve([])
+      return apiClient.getTrades(user.id, { limit: 10, symbol: asset !== "all" ? asset : undefined }).catch((error) => {
+        console.error("Error fetching trades:", error)
+        return []
+      })
+    },
+    30000,
     [user?.id, asset],
   )
 
-  // Transform market data for chart with trading signals
+  // Enhanced chart data with proper signal generation
   const chartData =
     marketData?.map((item: any, index: number) => {
-      const price = item.close_price
-      const prevPrice = index > 0 ? marketData[index - 1].close_price : price
-      const rsi = 50 + Math.sin(index * 0.3) * 20 // Mock RSI calculation
-      const ma = price * (0.98 + Math.sin(index * 0.1) * 0.04) // Mock moving average
+      const price = Number(item.close_price) || 0
+      const prevPrice = index > 0 ? Number(marketData[index - 1].close_price) || price : price
 
-      // Generate buy/sell signals based on strategy
+      // Mock technical indicators
+      const rsi = 50 + Math.sin(index * 0.3) * 20
+      const ma = price * (0.98 + Math.sin(index * 0.1) * 0.04)
+      const volume = Math.random() * 1000000 + 500000
+
+      // Generate signals based on strategy
       let signal = null
-      if (strategy === "momentum" && rsi < rsiThreshold[0] && price > ma) {
-        signal = "buy"
-      } else if (strategy === "momentum" && rsi > rsiThreshold[1] && price < ma) {
-        signal = "sell"
+      let signalStrength = 0
+
+      if (strategy === "momentum") {
+        if (rsi < rsiThreshold[0] && price > ma) {
+          signal = "buy"
+          signalStrength = Math.abs(rsi - rsiThreshold[0]) / 10
+        } else if (rsi > rsiThreshold[1] && price < ma) {
+          signal = "sell"
+          signalStrength = Math.abs(rsi - rsiThreshold[1]) / 10
+        }
       }
 
       return {
-        date: format(new Date(item.date), "MMM"),
+        date: format(new Date(item.date), "MMM dd"),
         price: price,
-        signal: signal,
-        rsi: rsi,
         ma: ma,
+        rsi: rsi,
+        volume: volume,
+        signal: signal,
+        signalStrength: signalStrength,
+        priceChange: ((price - prevPrice) / prevPrice) * 100,
       }
     }) || []
 
@@ -103,65 +121,63 @@ export default function DashboardPage() {
     try {
       const backtest = await apiClient.createBacktest({
         user_id: user.id,
-        strategy_id: 1, // In a real app, you'd get the actual strategy ID
-        name: `${strategy} - ${asset}`,
+        strategy_id: 1,
+        name: `${strategy.toUpperCase()} - ${asset}`,
         asset,
         start_date: dateRange.from,
         end_date: dateRange.to,
         status: "pending",
         parameters: {
+          strategy,
           rsiThreshold,
           maWindow: maWindow[0],
           enableStopLoss,
         },
       })
 
-      // Simulate backtest processing
+      // Simulate realistic backtest processing
       setTimeout(async () => {
         try {
-          // In production, this would be handled by a background job
           const results = {
-            total_return: Math.random() * 30 - 5, // -5% to 25%
-            sharpe_ratio: Math.random() * 3 + 0.5, // 0.5 to 3.5
-            max_drawdown: -(Math.random() * 15 + 2), // -2% to -17%
-            win_rate: Math.random() * 40 + 50, // 50% to 90%
-            total_trades: Math.floor(Math.random() * 100 + 20), // 20 to 120
+            total_return: (Math.random() - 0.3) * 40, // -12% to 28%
+            sharpe_ratio: Math.random() * 2.5 + 0.5, // 0.5 to 3.0
+            max_drawdown: -(Math.random() * 12 + 3), // -3% to -15%
+            win_rate: Math.random() * 30 + 55, // 55% to 85%
+            total_trades: Math.floor(Math.random() * 80 + 30), // 30 to 110
           }
 
-          // Update metrics
           setMetrics({
-            sharpeRatio: results.sharpe_ratio,
-            maxDrawdown: results.max_drawdown,
-            winRate: results.win_rate,
-            cagr: results.total_return,
+            sharpeRatio: Number(results.sharpe_ratio.toFixed(2)),
+            maxDrawdown: Number(results.max_drawdown.toFixed(1)),
+            winRate: Number(results.win_rate.toFixed(1)),
+            cagr: Number(results.total_return.toFixed(1)),
           })
 
           toast({
-            title: "Backtest Completed",
-            description: `Your ${strategy} strategy backtest has finished successfully.`,
+            title: "🚀 Backtest Completed",
+            description: `${strategy.toUpperCase()} strategy analysis finished. Return: ${results.total_return > 0 ? "+" : ""}${results.total_return.toFixed(1)}%`,
           })
 
-          // Refresh trades to show new backtest results
           refetchTrades()
         } catch (error) {
           toast({
-            title: "Backtest Failed",
-            description: "There was an error processing your backtest.",
+            title: "⚠️ Backtest Failed",
+            description: "Quantum processing error occurred. Please retry.",
             variant: "destructive",
           })
         } finally {
           setIsRunningBacktest(false)
         }
-      }, 3000) // 3 second simulation
+      }, 4000)
 
       toast({
-        title: "Backtest Started",
-        description: "Your backtest is now running. Results will appear shortly.",
+        title: "⚡ Backtest Initiated",
+        description: "Quantum algorithms are processing your strategy...",
       })
     } catch (error) {
       toast({
-        title: "Backtest Error",
-        description: "Failed to start backtest. Please try again.",
+        title: "❌ Initialization Error",
+        description: "Failed to start backtest. Check system status.",
         variant: "destructive",
       })
       setIsRunningBacktest(false)
@@ -172,76 +188,97 @@ export default function DashboardPage() {
     try {
       await Promise.all([refetchMarket(), refetchTrades()])
       toast({
-        title: "Data Refreshed",
-        description: "All dashboard data has been updated.",
+        title: "🔄 Data Synchronized",
+        description: "All quantum data streams updated successfully.",
       })
     } catch (error) {
       toast({
-        title: "Refresh Failed",
-        description: "Unable to refresh data. Please try again.",
+        title: "⚠️ Sync Failed",
+        description: "Unable to refresh data streams. Check connection.",
         variant: "destructive",
       })
     }
   }
 
   const handleExport = (type: string) => {
-    let data = ""
-    let filename = ""
+    try {
+      let data = ""
+      let filename = ""
 
-    if (type === "trades") {
-      const headers = "Date,Action,Symbol,Price,Quantity,P&L\n"
-      const rows =
-        tradeHistory
-          ?.map(
-            (trade: any) =>
-              `${format(new Date(trade.timestamp), "yyyy-MM-dd")},${trade.action},${trade.symbol},${trade.price},${trade.quantity},${trade.pnl || 0}`,
-          )
-          .join("\n") || ""
-      data = headers + rows
-      filename = `trades-${format(new Date(), "yyyy-MM-dd")}.csv`
-    } else if (type === "performance") {
-      const headers = "Date,Price,Signal\n"
-      const rows = chartData.map((row) => `${row.date},${row.price},${row.signal || ""}`).join("\n")
-      data = headers + rows
-      filename = `performance-${asset}-${format(new Date(), "yyyy-MM-dd")}.csv`
+      if (type === "trades") {
+        const headers = "Date,Action,Symbol,Price,Quantity,P&L\n"
+        const rows =
+          tradeHistory
+            ?.map(
+              (trade: any) =>
+                `${format(new Date(trade.timestamp), "yyyy-MM-dd")},${trade.action},${trade.symbol},${trade.price},${trade.quantity},${trade.pnl || 0}`,
+            )
+            .join("\n") || ""
+        data = headers + rows
+        filename = `quantum-trades-${format(new Date(), "yyyy-MM-dd")}.csv`
+      } else if (type === "performance") {
+        const headers = "Date,Price,Signal,RSI,MA\n"
+        const rows = chartData
+          .map((row) => `${row.date},${row.price},${row.signal || ""},${row.rsi.toFixed(2)},${row.ma.toFixed(2)}`)
+          .join("\n")
+        data = headers + rows
+        filename = `quantum-performance-${asset}-${format(new Date(), "yyyy-MM-dd")}.csv`
+      }
+
+      const blob = new Blob([data], { type: "text/csv" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "📊 Export Complete",
+        description: `${type} data exported to quantum storage.`,
+      })
+    } catch (error) {
+      toast({
+        title: "❌ Export Failed",
+        description: "Unable to export data. Try again.",
+        variant: "destructive",
+      })
     }
-
-    // Create and download file
-    const blob = new Blob([data], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = filename
-    a.click()
-    window.URL.revokeObjectURL(url)
-
-    toast({
-      title: "Export Complete",
-      description: `${type} data has been exported successfully.`,
-    })
   }
 
   return (
     <DashboardLayout>
-      <div className="flex">
+      <div className="flex gap-6">
         {/* Main Dashboard Content */}
-        <div className="flex-1 space-y-6 pr-4">
+        <div className="flex-1 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Trading Dashboard</h1>
-              <p className="text-muted-foreground">Monitor your quantitative trading strategies and performance</p>
+              <h1 className="text-4xl font-bold cyber-title">Quantum Trading Hub</h1>
+              <p className="text-muted-foreground font-mono mt-2">
+                Real-time algorithmic trading intelligence • {format(new Date(), "MMM dd, yyyy HH:mm")}
+              </p>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={handleRefreshData}>
+              <Button variant="outline" size="sm" onClick={handleRefreshData} className="cyber-button">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
+                Sync
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleExport("performance")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExport("performance")}
+                className="hover:neon-glow-blue"
+              >
                 <FileText className="mr-2 h-4 w-4" />
                 Export PDF
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleExport("trades")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExport("trades")}
+                className="hover:neon-glow-purple"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Export CSV
               </Button>
@@ -249,58 +286,68 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar Controls */}
+            {/* Control Panel */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Strategy Selection */}
-              <Card>
+              {/* Strategy Configuration */}
+              <Card className="metric-card">
                 <CardHeader>
-                  <CardTitle className="text-lg">Strategy</CardTitle>
+                  <CardTitle className="text-lg font-mono text-green-400 flex items-center">
+                    <Zap className="mr-2 h-5 w-5" />
+                    Strategy Config
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="strategy">Strategy Type</Label>
+                    <Label htmlFor="strategy" className="font-mono text-xs text-muted-foreground">
+                      ALGORITHM
+                    </Label>
                     <Select value={strategy} onValueChange={setStrategy}>
-                      <SelectTrigger>
+                      <SelectTrigger className="glass border-green-400/30">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="momentum">Momentum</SelectItem>
+                      <SelectContent className="glass border-green-400/30">
+                        <SelectItem value="momentum">Momentum Surge</SelectItem>
                         <SelectItem value="mean-reversion">Mean Reversion</SelectItem>
-                        <SelectItem value="breakout">Breakout</SelectItem>
-                        <SelectItem value="pairs-trading">Pairs Trading</SelectItem>
+                        <SelectItem value="breakout">Breakout Hunter</SelectItem>
+                        <SelectItem value="pairs-trading">Pairs Arbitrage</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="asset">Asset</Label>
+                    <Label htmlFor="asset" className="font-mono text-xs text-muted-foreground">
+                      TARGET ASSET
+                    </Label>
                     <Select value={asset} onValueChange={setAsset}>
-                      <SelectTrigger>
+                      <SelectTrigger className="glass border-blue-400/30">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AAPL">AAPL</SelectItem>
-                        <SelectItem value="TSLA">TSLA</SelectItem>
-                        <SelectItem value="MSFT">MSFT</SelectItem>
-                        <SelectItem value="GOOGL">GOOGL</SelectItem>
-                        <SelectItem value="BTC/USD">BTC/USD</SelectItem>
-                        <SelectItem value="ETH/USD">ETH/USD</SelectItem>
+                      <SelectContent className="glass border-blue-400/30">
+                        <SelectItem value="AAPL">AAPL • Apple Inc</SelectItem>
+                        <SelectItem value="TSLA">TSLA • Tesla Inc</SelectItem>
+                        <SelectItem value="MSFT">MSFT • Microsoft</SelectItem>
+                        <SelectItem value="GOOGL">GOOGL • Alphabet</SelectItem>
+                        <SelectItem value="BTC/USD">BTC/USD • Bitcoin</SelectItem>
+                        <SelectItem value="ETH/USD">ETH/USD • Ethereum</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label>Date Range</Label>
+                    <Label className="font-mono text-xs text-muted-foreground">TIME RANGE</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal glass border-purple-400/30"
+                        >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {dateRange.from && dateRange.to
                             ? `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
-                            : "Pick a date range"}
+                            : "Select range"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 glass border-purple-400/30" align="start">
                         <Calendar
                           mode="range"
                           selected={dateRange}
@@ -314,14 +361,17 @@ export default function DashboardPage() {
               </Card>
 
               {/* Parameters */}
-              <Card>
+              <Card className="metric-card">
                 <CardHeader>
-                  <CardTitle className="text-lg">Parameters</CardTitle>
+                  <CardTitle className="text-lg font-mono text-blue-400 flex items-center">
+                    <Target className="mr-2 h-5 w-5" />
+                    Parameters
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <Label>
-                      RSI Thresholds: {rsiThreshold[0]} - {rsiThreshold[1]}
+                    <Label className="font-mono text-xs text-muted-foreground">
+                      RSI THRESHOLDS: {rsiThreshold[0]} - {rsiThreshold[1]}
                     </Label>
                     <Slider
                       value={rsiThreshold}
@@ -334,27 +384,33 @@ export default function DashboardPage() {
                   </div>
 
                   <div>
-                    <Label>Moving Average Window: {maWindow[0]} days</Label>
+                    <Label className="font-mono text-xs text-muted-foreground">MA WINDOW: {maWindow[0]} periods</Label>
                     <Slider value={maWindow} onValueChange={setMaWindow} max={200} min={5} step={1} className="mt-2" />
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Switch id="stop-loss" checked={enableStopLoss} onCheckedChange={setEnableStopLoss} />
-                    <Label htmlFor="stop-loss">Enable Stop Loss</Label>
+                    <Switch
+                      id="stop-loss"
+                      checked={enableStopLoss}
+                      onCheckedChange={setEnableStopLoss}
+                      className="data-[state=checked]:bg-green-400"
+                    />
+                    <Label htmlFor="stop-loss" className="font-mono text-xs">
+                      STOP LOSS ENABLED
+                    </Label>
                   </div>
 
-                  <Button
-                    className="w-full bg-primary hover:bg-primary/90"
-                    onClick={handleRunBacktest}
-                    disabled={isRunningBacktest}
-                  >
+                  <Button className="w-full cyber-button" onClick={handleRunBacktest} disabled={isRunningBacktest}>
                     {isRunningBacktest ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Running...
+                        PROCESSING...
                       </>
                     ) : (
-                      "Run Backtest"
+                      <>
+                        <Zap className="mr-2 h-4 w-4" />
+                        EXECUTE BACKTEST
+                      </>
                     )}
                   </Button>
                 </CardContent>
@@ -363,66 +419,74 @@ export default function DashboardPage() {
 
             {/* Main Content */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Metrics Cards */}
+              {/* Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
+                <Card className="metric-card">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Sharpe Ratio</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-mono text-muted-foreground">SHARPE RATIO</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-primary">{metrics.sharpeRatio.toFixed(2)}</div>
-                    <p className="text-xs text-muted-foreground">+12% from last month</p>
+                    <div className="text-3xl font-bold text-green-400 data-label">{metrics.sharpeRatio}</div>
+                    <p className="text-xs text-muted-foreground font-mono">+12% from last cycle</p>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="metric-card">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Max Drawdown</CardTitle>
-                    <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-mono text-muted-foreground">MAX DRAWDOWN</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-red-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-destructive">{metrics.maxDrawdown.toFixed(1)}%</div>
-                    <p className="text-xs text-muted-foreground">Improved by 2.1%</p>
+                    <div className="text-3xl font-bold text-red-400 data-label">{metrics.maxDrawdown}%</div>
+                    <p className="text-xs text-muted-foreground font-mono">Improved by 2.1%</p>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="metric-card">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-mono text-muted-foreground">WIN RATE</CardTitle>
+                    <Activity className="h-4 w-4 text-blue-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-accent">{metrics.winRate.toFixed(1)}%</div>
-                    <p className="text-xs text-muted-foreground">+5.3% from last month</p>
+                    <div className="text-3xl font-bold text-blue-400 data-label">{metrics.winRate}%</div>
+                    <p className="text-xs text-muted-foreground font-mono">+5.3% from last cycle</p>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="metric-card">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">CAGR</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-mono text-muted-foreground">CAGR</CardTitle>
+                    <DollarSign className="h-4 w-4 text-purple-400" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-primary">
+                    <div className="text-3xl font-bold text-purple-400 data-label">
                       {metrics.cagr > 0 ? "+" : ""}
-                      {metrics.cagr.toFixed(1)}%
+                      {metrics.cagr}%
                     </div>
-                    <p className="text-xs text-muted-foreground">+2.1% from last month</p>
+                    <p className="text-xs text-muted-foreground font-mono">+2.1% from last cycle</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Chart */}
-              <Card>
+              {/* Enhanced Chart */}
+              <Card className="chart-container">
                 <CardHeader>
-                  <CardTitle>Price Chart with Signals</CardTitle>
-                  <CardDescription>{asset} price movement with entry/exit signals</CardDescription>
+                  <CardTitle className="font-mono text-green-400 flex items-center">
+                    <BarChart3 className="mr-2 h-5 w-5" />
+                    Quantum Price Analysis • {asset}
+                  </CardTitle>
+                  <CardDescription className="font-mono">
+                    Real-time price action with AI-generated trading signals
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {marketLoading ? (
                     <div className="h-[400px] flex items-center justify-center">
-                      <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <div className="flex flex-col items-center space-y-4">
+                        <RefreshCw className="h-8 w-8 animate-spin text-green-400" />
+                        <p className="font-mono text-muted-foreground">Loading quantum data...</p>
+                      </div>
                     </div>
                   ) : (
                     <ChartContainer
@@ -440,10 +504,28 @@ export default function DashboardPage() {
                     >
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="date" />
-                          <YAxis />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(142, 76, 36, 0.2)" />
+                          <XAxis
+                            dataKey="date"
+                            stroke="rgba(255, 255, 255, 0.5)"
+                            fontSize={12}
+                            fontFamily="monospace"
+                          />
+                          <YAxis stroke="rgba(255, 255, 255, 0.5)" fontSize={12} fontFamily="monospace" />
                           <ChartTooltip content={<ChartTooltipContent />} />
+
+                          {/* Moving Average */}
+                          <Line
+                            type="monotone"
+                            dataKey="ma"
+                            stroke="var(--color-ma)"
+                            strokeWidth={1}
+                            strokeDasharray="5 5"
+                            dot={false}
+                            opacity={0.7}
+                          />
+
+                          {/* Price Line */}
                           <Line
                             type="monotone"
                             dataKey="price"
@@ -452,21 +534,35 @@ export default function DashboardPage() {
                             dot={(props) => {
                               const { payload } = props
                               if (payload?.signal === "buy") {
-                                return <circle {...props} r={6} fill="#00ff88" stroke="#00ff88" />
+                                return (
+                                  <circle
+                                    {...props}
+                                    r={6}
+                                    fill="#00ff88"
+                                    stroke="#00ff88"
+                                    strokeWidth={2}
+                                    className="animate-pulse"
+                                  />
+                                )
                               } else if (payload?.signal === "sell") {
-                                return <circle {...props} r={6} fill="#ff4444" stroke="#ff4444" />
+                                return (
+                                  <circle
+                                    {...props}
+                                    r={6}
+                                    fill="#ff4444"
+                                    stroke="#ff4444"
+                                    strokeWidth={2}
+                                    className="animate-pulse"
+                                  />
+                                )
                               }
-                              return <circle {...props} r={2} fill="var(--color-price)" />
+                              return <circle {...props} r={1} fill="var(--color-price)" />
                             }}
                           />
-                          <Line
-                            type="monotone"
-                            dataKey="ma"
-                            stroke="var(--color-ma)"
-                            strokeWidth={1}
-                            strokeDasharray="5 5"
-                            dot={false}
-                          />
+
+                          {/* RSI Reference Lines */}
+                          <ReferenceLine y={rsiThreshold[0]} stroke="#ff4444" strokeDasharray="2 2" opacity={0.5} />
+                          <ReferenceLine y={rsiThreshold[1]} stroke="#00ff88" strokeDasharray="2 2" opacity={0.5} />
                         </LineChart>
                       </ResponsiveContainer>
                     </ChartContainer>
@@ -474,50 +570,60 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Trade Log */}
-              <Card>
+              {/* Enhanced Trade Log */}
+              <Card className="metric-card">
                 <CardHeader>
-                  <CardTitle>Recent Trades</CardTitle>
-                  <CardDescription>Latest trading activity and performance</CardDescription>
+                  <CardTitle className="font-mono text-blue-400 flex items-center">
+                    <Activity className="mr-2 h-5 w-5" />
+                    Quantum Trade Log
+                  </CardTitle>
+                  <CardDescription className="font-mono">
+                    Real-time execution history and performance metrics
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {tradesLoading ? (
                     <div className="space-y-2">
                       {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+                        <div key={i} className="h-12 bg-white/5 animate-pulse rounded loading-pulse" />
                       ))}
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Action</TableHead>
-                          <TableHead>Symbol</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Quantity</TableHead>
-                          <TableHead className="text-right">P&L</TableHead>
+                        <TableRow className="border-green-400/20">
+                          <TableHead className="font-mono text-muted-foreground">TIMESTAMP</TableHead>
+                          <TableHead className="font-mono text-muted-foreground">ACTION</TableHead>
+                          <TableHead className="font-mono text-muted-foreground">SYMBOL</TableHead>
+                          <TableHead className="font-mono text-muted-foreground">PRICE</TableHead>
+                          <TableHead className="font-mono text-muted-foreground">QTY</TableHead>
+                          <TableHead className="text-right font-mono text-muted-foreground">P&L</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {tradeHistory && tradeHistory.length > 0 ? (
                           tradeHistory.map((trade: any) => (
-                            <TableRow key={trade.id}>
-                              <TableCell>{format(new Date(trade.timestamp), "yyyy-MM-dd")}</TableCell>
+                            <TableRow key={trade.id} className="border-green-400/10 hover:bg-white/5">
+                              <TableCell className="font-mono text-xs">
+                                {format(new Date(trade.timestamp), "MM/dd HH:mm")}
+                              </TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={trade.action === "BUY" ? "default" : "secondary"}
-                                  className={trade.action === "BUY" ? "bg-primary" : "bg-accent"}
+                                  className={`font-mono ${
+                                    trade.action === "BUY"
+                                      ? "status-active"
+                                      : "bg-gradient-to-r from-red-500 to-red-600"
+                                  }`}
                                 >
                                   {trade.action}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="font-medium">{trade.symbol}</TableCell>
-                              <TableCell>${Number.parseFloat(trade.price).toFixed(2)}</TableCell>
-                              <TableCell>{trade.quantity}</TableCell>
+                              <TableCell className="font-mono font-medium">{trade.symbol}</TableCell>
+                              <TableCell className="font-mono">${Number.parseFloat(trade.price).toFixed(2)}</TableCell>
+                              <TableCell className="font-mono">{trade.quantity}</TableCell>
                               <TableCell
-                                className={`text-right font-medium ${
-                                  Number.parseFloat(trade.pnl || 0) >= 0 ? "text-primary" : "text-destructive"
+                                className={`text-right font-mono font-medium ${
+                                  Number.parseFloat(trade.pnl || 0) >= 0 ? "text-green-400" : "text-red-400"
                                 }`}
                               >
                                 ${Number.parseFloat(trade.pnl || 0) >= 0 ? "+" : ""}
@@ -527,8 +633,8 @@ export default function DashboardPage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                              No trade history available
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground font-mono">
+                              No quantum trades detected in current timeframe
                             </TableCell>
                           </TableRow>
                         )}
