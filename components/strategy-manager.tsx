@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Trash2, Play, Pause, Copy, Zap, Brain, Target } from "lucide-react"
+import { Plus, Edit, Trash2, Play, Pause, Copy, Sparkles, Zap } from "lucide-react"
 import { useStrategies } from "@/hooks/use-api"
 import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/hooks/use-auth"
@@ -98,8 +98,8 @@ export function StrategyManager() {
       })
 
       toast({
-        title: "🚀 Strategy Created",
-        description: `${formData.name} quantum algorithm initialized successfully.`,
+        title: "Strategy Created",
+        description: `${formData.name} has been created successfully.`,
       })
 
       setIsCreateDialogOpen(false)
@@ -107,8 +107,8 @@ export function StrategyManager() {
       refetch()
     } catch (error) {
       toast({
-        title: "❌ Creation Failed",
-        description: "Unable to initialize strategy. Check quantum parameters.",
+        title: "Creation Failed",
+        description: "Unable to create strategy. Please try again.",
         variant: "destructive",
       })
     }
@@ -121,8 +121,8 @@ export function StrategyManager() {
       await apiClient.updateStrategy(editingStrategy.id, formData)
 
       toast({
-        title: "⚡ Strategy Updated",
-        description: `${formData.name} quantum parameters recalibrated.`,
+        title: "Strategy Updated",
+        description: `${formData.name} has been updated successfully.`,
       })
 
       setIsEditDialogOpen(false)
@@ -130,8 +130,8 @@ export function StrategyManager() {
       refetch()
     } catch (error) {
       toast({
-        title: "⚠️ Update Failed",
-        description: "Unable to recalibrate strategy. Try again.",
+        title: "Update Failed",
+        description: "Unable to update strategy. Please try again.",
         variant: "destructive",
       })
     }
@@ -142,15 +142,15 @@ export function StrategyManager() {
       await apiClient.deleteStrategy(id)
 
       toast({
-        title: "🗑️ Strategy Deleted",
-        description: `${name} quantum algorithm removed from system.`,
+        title: "Strategy Deleted",
+        description: `${name} has been deleted successfully.`,
       })
 
       refetch()
     } catch (error) {
       toast({
-        title: "❌ Deletion Failed",
-        description: "Unable to remove strategy. Check system permissions.",
+        title: "Deletion Failed",
+        description: "Unable to delete strategy. Please try again.",
         variant: "destructive",
       })
     }
@@ -163,15 +163,15 @@ export function StrategyManager() {
       await apiClient.updateStrategy(strategy.id, { status: newStatus })
 
       toast({
-        title: newStatus === "active" ? "🟢 Strategy Activated" : "⏸️ Strategy Paused",
+        title: "Status Updated",
         description: `${strategy.name} is now ${newStatus}.`,
       })
 
       refetch()
     } catch (error) {
       toast({
-        title: "⚠️ Status Update Failed",
-        description: "Unable to change strategy status. Try again.",
+        title: "Update Failed",
+        description: "Unable to update strategy status.",
         variant: "destructive",
       })
     }
@@ -183,7 +183,7 @@ export function StrategyManager() {
     try {
       await apiClient.createStrategy({
         user_id: user.id,
-        name: `${strategy.name} (Quantum Clone)`,
+        name: `${strategy.name} (Copy)`,
         type: strategy.type,
         description: strategy.description,
         parameters: strategy.parameters,
@@ -191,15 +191,15 @@ export function StrategyManager() {
       })
 
       toast({
-        title: "🔄 Strategy Cloned",
-        description: `${strategy.name} quantum duplicate created.`,
+        title: "Strategy Cloned",
+        description: `${strategy.name} has been cloned successfully.`,
       })
 
       refetch()
     } catch (error) {
       toast({
-        title: "❌ Clone Failed",
-        description: "Unable to duplicate strategy. Try again.",
+        title: "Clone Failed",
+        description: "Unable to clone strategy. Please try again.",
         variant: "destructive",
       })
     }
@@ -217,32 +217,38 @@ export function StrategyManager() {
   }
 
   const StrategyForm = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="grid gap-6 py-4">
+    <div className="grid gap-4 py-4">
       <div className="grid gap-2">
-        <Label htmlFor="strategy-name" className="font-mono text-xs text-green-400">
-          STRATEGY NAME
-        </Label>
+        <Label htmlFor="strategy-name">Strategy Name</Label>
         <Input
           id="strategy-name"
+          key={`name-${isEdit ? editingStrategy?.id : "new"}`}
           value={formData.name}
-          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-          placeholder="e.g., Quantum RSI Momentum"
-          className="glass border-green-400/30 font-mono"
+          onChange={(e) => {
+            const value = e.target.value
+            setFormData((prev) => ({ ...prev, name: value }))
+          }}
+          placeholder="e.g., RSI Momentum"
+          className="bg-secondary border-secondary"
         />
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="strategy-type" className="font-mono text-xs text-blue-400">
-          ALGORITHM TYPE
-        </Label>
-        <Select value={formData.type} onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}>
-          <SelectTrigger className="glass border-blue-400/30">
-            <SelectValue placeholder="Select quantum algorithm" />
+        <Label htmlFor="strategy-type">Strategy Type</Label>
+        <Select
+          key={`type-${isEdit ? editingStrategy?.id : "new"}`}
+          value={formData.type}
+          onValueChange={(value) => {
+            setFormData((prev) => ({ ...prev, type: value }))
+          }}
+        >
+          <SelectTrigger className="bg-secondary border-secondary">
+            <SelectValue placeholder="Select strategy type" />
           </SelectTrigger>
-          <SelectContent className="glass border-blue-400/30">
-            <SelectItem value="momentum">Momentum Surge</SelectItem>
+          <SelectContent>
+            <SelectItem value="momentum">Momentum</SelectItem>
             <SelectItem value="mean-reversion">Mean Reversion</SelectItem>
-            <SelectItem value="breakout">Breakout Hunter</SelectItem>
+            <SelectItem value="breakout">Breakout</SelectItem>
             <SelectItem value="arbitrage">Statistical Arbitrage</SelectItem>
             <SelectItem value="pairs-trading">Pairs Trading</SelectItem>
           </SelectContent>
@@ -250,80 +256,74 @@ export function StrategyManager() {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="strategy-description" className="font-mono text-xs text-purple-400">
-          DESCRIPTION
-        </Label>
+        <Label htmlFor="strategy-description">Description</Label>
         <Textarea
           id="strategy-description"
+          key={`desc-${isEdit ? editingStrategy?.id : "new"}`}
           value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-          placeholder="Describe your quantum trading logic..."
-          className="glass border-purple-400/30 font-mono"
-          rows={3}
+          onChange={(e) => {
+            const value = e.target.value
+            setFormData((prev) => ({ ...prev, description: value }))
+          }}
+          placeholder="Describe your strategy logic..."
+          className="bg-secondary border-secondary"
         />
       </div>
 
-      {/* Quantum Parameters */}
-      <div className="space-y-6 p-4 glass rounded-lg border border-orange-400/30">
-        <Label className="text-sm font-mono text-orange-400 flex items-center">
-          <Target className="mr-2 h-4 w-4" />
-          QUANTUM PARAMETERS
-        </Label>
+      {/* Parameters */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">Parameters</Label>
 
         <div className="space-y-2">
-          <Label className="text-xs font-mono text-muted-foreground">
-            RSI THRESHOLDS: {formData.parameters.rsiThreshold[0]} - {formData.parameters.rsiThreshold[1]}
+          <Label className="text-xs">
+            RSI Thresholds: {formData.parameters.rsiThreshold[0]} - {formData.parameters.rsiThreshold[1]}
           </Label>
           <Slider
             value={formData.parameters.rsiThreshold}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
               setFormData((prev) => ({
                 ...prev,
                 parameters: { ...prev.parameters, rsiThreshold: value },
               }))
-            }
+            }}
             max={100}
             min={0}
             step={1}
-            className="[&_[role=slider]]:bg-green-400"
+            className="py-2"
           />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-mono text-muted-foreground">
-            MA WINDOW: {formData.parameters.maWindow} periods
-          </Label>
+          <Label className="text-xs">Moving Average Window: {formData.parameters.maWindow}</Label>
           <Slider
             value={[formData.parameters.maWindow]}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
               setFormData((prev) => ({
                 ...prev,
                 parameters: { ...prev.parameters, maWindow: value[0] },
               }))
-            }
+            }}
             max={200}
             min={5}
             step={1}
-            className="[&_[role=slider]]:bg-blue-400"
+            className="py-2"
           />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-mono text-muted-foreground">
-            STOP LOSS: {(formData.parameters.stopLoss * 100).toFixed(1)}%
-          </Label>
+          <Label className="text-xs">Stop Loss: {(formData.parameters.stopLoss * 100).toFixed(1)}%</Label>
           <Slider
             value={[formData.parameters.stopLoss * 100]}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
               setFormData((prev) => ({
                 ...prev,
                 parameters: { ...prev.parameters, stopLoss: value[0] / 100 },
               }))
-            }
+            }}
             max={20}
             min={1}
             step={0.1}
-            className="[&_[role=slider]]:bg-purple-400"
+            className="py-2"
           />
         </div>
 
@@ -331,16 +331,15 @@ export function StrategyManager() {
           <Switch
             id="enable-stop-loss"
             checked={formData.parameters.enableStopLoss}
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) => {
               setFormData((prev) => ({
                 ...prev,
                 parameters: { ...prev.parameters, enableStopLoss: checked },
               }))
-            }
-            className="data-[state=checked]:bg-green-400"
+            }}
           />
-          <Label htmlFor="enable-stop-loss" className="text-xs font-mono text-muted-foreground">
-            ENABLE STOP LOSS
+          <Label htmlFor="enable-stop-loss" className="text-xs">
+            Enable Stop Loss
           </Label>
         </div>
 
@@ -348,16 +347,15 @@ export function StrategyManager() {
           <Switch
             id="enable-take-profit"
             checked={formData.parameters.enableTakeProfit}
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) => {
               setFormData((prev) => ({
                 ...prev,
                 parameters: { ...prev.parameters, enableTakeProfit: checked },
               }))
-            }
-            className="data-[state=checked]:bg-blue-400"
+            }}
           />
-          <Label htmlFor="enable-take-profit" className="text-xs font-mono text-muted-foreground">
-            ENABLE TAKE PROFIT
+          <Label htmlFor="enable-take-profit" className="text-xs">
+            Enable Take Profit
           </Label>
         </div>
       </div>
@@ -368,15 +366,15 @@ export function StrategyManager() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="metric-card loading-pulse">
+          <Card key={i} className="animate-pulse glass-card">
             <CardHeader>
-              <div className="h-4 bg-white/10 rounded w-3/4"></div>
-              <div className="h-3 bg-white/5 rounded w-1/2"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div className="h-3 bg-white/5 rounded"></div>
-                <div className="h-3 bg-white/5 rounded w-5/6"></div>
+                <div className="h-3 bg-muted rounded"></div>
+                <div className="h-3 bg-muted rounded w-5/6"></div>
               </div>
             </CardContent>
           </Card>
@@ -390,37 +388,32 @@ export function StrategyManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold cyber-title">Quantum Strategy Hub</h2>
-          <p className="text-muted-foreground font-mono mt-2">
-            Create, manage, and deploy AI-powered trading algorithms
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight gradient-text">Strategy Management</h2>
+          <p className="text-muted-foreground">Create, manage, and monitor your quantitative trading strategies</p>
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="cyber-button">
+            <Button className="bg-primary hover:bg-primary/90 btn-hover-effect">
               <Plus className="mr-2 h-4 w-4" />
-              CREATE STRATEGY
+              Create Strategy
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] glass border-green-400/30">
+          <DialogContent className="sm:max-w-[500px] glass-card">
             <DialogHeader>
-              <DialogTitle className="font-mono text-green-400 flex items-center">
-                <Brain className="mr-2 h-5 w-5" />
-                Initialize Quantum Strategy
+              <DialogTitle className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                Create New Strategy
               </DialogTitle>
-              <DialogDescription className="font-mono text-muted-foreground">
-                Configure your new AI trading algorithm parameters
-              </DialogDescription>
+              <DialogDescription>Define your new quantitative trading strategy</DialogDescription>
             </DialogHeader>
             <StrategyForm />
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="font-mono">
-                CANCEL
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
               </Button>
-              <Button onClick={handleCreateStrategy} className="cyber-button">
-                <Zap className="mr-2 h-4 w-4" />
-                INITIALIZE
+              <Button onClick={handleCreateStrategy} className="btn-hover-effect">
+                Create Strategy
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -430,79 +423,74 @@ export function StrategyManager() {
       {/* Strategy Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {strategies?.map((strategy: Strategy) => (
-          <Card key={strategy.id} className="metric-card hover:neon-glow-blue transition-all duration-300">
+          <Card key={strategy.id} className="hover:shadow-lg transition-shadow glass-card">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-mono text-green-400">{strategy.name}</CardTitle>
+                <CardTitle className="text-lg flex items-center">
+                  {strategy.status === "active" && <Zap className="h-4 w-4 mr-2 text-primary" />}
+                  {strategy.name}
+                </CardTitle>
                 <Badge
-                  className={`font-mono ${
-                    strategy.status === "active"
-                      ? "status-active"
-                      : strategy.status === "paused"
-                        ? "status-paused"
-                        : "status-draft"
-                  }`}
+                  variant={
+                    strategy.status === "active" ? "default" : strategy.status === "paused" ? "secondary" : "outline"
+                  }
+                  className={
+                    strategy.status === "active" ? "bg-primary" : strategy.status === "paused" ? "bg-accent" : ""
+                  }
                 >
-                  {strategy.status.toUpperCase()}
+                  {strategy.status}
                 </Badge>
               </div>
-              <CardDescription className="font-mono text-blue-400">{strategy.type}</CardDescription>
+              <CardDescription>{strategy.type}</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-2 font-mono">{strategy.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{strategy.description}</p>
 
               {/* Performance Metrics */}
               {strategy.performance && (
-                <div className="grid grid-cols-3 gap-2 text-sm p-3 glass rounded-lg border border-green-400/20">
-                  <div className="text-center">
-                    <div className="font-mono font-medium text-green-400">
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="text-center p-2 rounded-lg bg-secondary">
+                    <div className="font-medium text-primary">
                       {strategy.performance.return > 0 ? "+" : ""}
                       {strategy.performance.return}%
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono">RETURN</div>
+                    <div className="text-xs text-muted-foreground">Return</div>
                   </div>
-                  <div className="text-center">
-                    <div className="font-mono font-medium text-blue-400">{strategy.performance.sharpe}</div>
-                    <div className="text-xs text-muted-foreground font-mono">SHARPE</div>
+                  <div className="text-center p-2 rounded-lg bg-secondary">
+                    <div className="font-medium">{strategy.performance.sharpe}</div>
+                    <div className="text-xs text-muted-foreground">Sharpe</div>
                   </div>
-                  <div className="text-center">
-                    <div className="font-mono font-medium text-red-400">{strategy.performance.maxDrawdown}%</div>
-                    <div className="text-xs text-muted-foreground font-mono">MAX DD</div>
+                  <div className="text-center p-2 rounded-lg bg-secondary">
+                    <div className="font-medium text-destructive">{strategy.performance.maxDrawdown}%</div>
+                    <div className="text-xs text-muted-foreground">Max DD</div>
                   </div>
                 </div>
               )}
 
-              {strategy.lastRun && (
-                <div className="text-xs text-muted-foreground font-mono">LAST RUN: {strategy.lastRun}</div>
-              )}
+              {strategy.lastRun && <div className="text-xs text-muted-foreground">Last run: {strategy.lastRun}</div>}
 
               {/* Action Buttons */}
               <div className="flex space-x-1">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 font-mono hover:neon-glow-blue"
+                  className={`flex-1 btn-hover-effect ${strategy.status === "active" ? "border-primary" : ""}`}
                   onClick={() => handleToggleStatus(strategy)}
                 >
                   {strategy.status === "active" ? (
-                    <>
-                      <Pause className="mr-1 h-3 w-3" />
-                      PAUSE
-                    </>
+                    <Pause className="mr-1 h-3 w-3" />
                   ) : (
-                    <>
-                      <Play className="mr-1 h-3 w-3" />
-                      RUN
-                    </>
+                    <Play className="mr-1 h-3 w-3" />
                   )}
+                  {strategy.status === "active" ? "Pause" : "Run"}
                 </Button>
 
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => openEditDialog(strategy)}
-                  className="hover:neon-glow-purple"
+                  className="btn-hover-effect"
                 >
                   <Edit className="h-3 w-3" />
                 </Button>
@@ -511,32 +499,31 @@ export function StrategyManager() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleCloneStrategy(strategy)}
-                  className="hover:neon-glow-blue"
+                  className="btn-hover-effect"
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="hover:bg-red-500/20 hover:border-red-500/50">
+                    <Button size="sm" variant="outline" className="btn-hover-effect">
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="glass border-red-400/30">
+                  <AlertDialogContent className="glass-card">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="font-mono text-red-400">Delete Quantum Strategy</AlertDialogTitle>
-                      <AlertDialogDescription className="font-mono">
-                        Are you sure you want to delete "{strategy.name}"? This quantum algorithm will be permanently
-                        removed from the system.
+                      <AlertDialogTitle>Delete Strategy</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{strategy.name}"? This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="font-mono">CANCEL</AlertDialogCancel>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleDeleteStrategy(strategy.id, strategy.name)}
-                        className="bg-red-500 text-white hover:bg-red-600 font-mono"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        DELETE
+                        Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -549,24 +536,21 @@ export function StrategyManager() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] glass border-blue-400/30">
+        <DialogContent className="sm:max-w-[500px] glass-card">
           <DialogHeader>
-            <DialogTitle className="font-mono text-blue-400 flex items-center">
-              <Edit className="mr-2 h-5 w-5" />
-              Recalibrate Strategy
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-primary" />
+              Edit Strategy
             </DialogTitle>
-            <DialogDescription className="font-mono text-muted-foreground">
-              Modify quantum algorithm parameters and configuration
-            </DialogDescription>
+            <DialogDescription>Modify your trading strategy parameters</DialogDescription>
           </DialogHeader>
           <StrategyForm isEdit />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="font-mono">
-              CANCEL
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
             </Button>
-            <Button onClick={handleUpdateStrategy} className="cyber-button">
-              <Zap className="mr-2 h-4 w-4" />
-              UPDATE
+            <Button onClick={handleUpdateStrategy} className="btn-hover-effect">
+              Update Strategy
             </Button>
           </DialogFooter>
         </DialogContent>
