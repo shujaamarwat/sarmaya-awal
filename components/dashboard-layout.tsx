@@ -114,10 +114,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground h-12"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted h-10"
               } ${isActive ? "gradient-border" : ""}`}
               onClick={() => mobile && setSidebarOpen(false)}
             >
