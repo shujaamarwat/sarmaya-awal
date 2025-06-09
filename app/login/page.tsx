@@ -96,18 +96,25 @@ export default function LoginPage() {
                   required
                   className="bg-secondary border-secondary pr-12"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                <div 
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer z-20"
                   onClick={togglePasswordVisibility}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      togglePasswordVisibility();
+                    }
+                  }}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
                   )}
-                </button>
+                </div>
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
