@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -54,7 +53,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading, signOut } = useAuth()
 
   useEffect(() => {
-    // Fetch alerts when user is available
     const fetchAlerts = async () => {
       if (!user) return
 
@@ -72,7 +70,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     fetchAlerts()
   }, [user])
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -89,7 +86,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     )
   }
 
-  // If no user after loading, this will be handled by middleware
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -146,40 +142,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
       <div className="hidden lg:flex">
         <Sidebar />
       </div>
 
-      {/* Mobile Sidebar */}
-      {/* <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="p-0 w-64">
           <Sidebar mobile />
         </SheetContent>
-      </Sheet> */}
+      </Sheet>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="flex items-center justify-between h-16 px-6 bg-card border-b border-border">
           <div className="flex items-center">
-            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-64">
-                <Sidebar mobile />
-              </SheetContent>
-            </Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
             <div className="ml-4 lg:hidden">
               <span className="text-lg font-bold gradient-text">Sarmaya Awal</span>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative btn-hover-effect">
@@ -211,7 +197,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="btn-hover-effect">
@@ -241,7 +226,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
