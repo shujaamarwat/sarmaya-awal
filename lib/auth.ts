@@ -22,13 +22,13 @@ export async function signUp(email: string, password: string, name: string) {
     return { success: false, message: "User already exists" }
   }
 
-  // Create new user
+  // Create user
   const hashedPassword = hashPassword(password)
   const user = await createUser({
     email,
     password_hash: hashedPassword,
     name,
-    timezone: "UTC",
+    timezone: "UTC-5",
     theme: "dark",
     language: "en",
     currency: "USD",
@@ -38,91 +38,76 @@ export async function signUp(email: string, password: string, name: string) {
 
   // Create session
   const sessionToken = generateSessionToken()
-  cookies().set("session_token", sessionToken, {
+  const cookieStore = await cookies()
+  cookieStore.set("session_token", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   })
 
-  // Store user ID in a separate cookie for easy access
-  cookies().set("user_id", user.id.toString(), {
+  cookieStore.set("user_id", user.id.toString(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   })
+
+  await updateLastLogin(user.id)
 
   return { success: true, user }
 }
 
 export async function signIn(email: string, password: string) {
-  // Find user
   const user = await getUserByEmail(email)
   if (!user) {
-    return { success: false, message: "Invalid email or password" }
+    return { success: false, message: "Invalid credentials" }
   }
 
-  // Check password
   const hashedPassword = hashPassword(password)
   if (user.password_hash !== hashedPassword) {
-    return { success: false, message: "Invalid email or password" }
+    return { success: false, message: "Invalid credentials" }
   }
-
-  // Update last login
-  await updateLastLogin(user.id)
 
   // Create session
   const sessionToken = generateSessionToken()
-  cookies().set("session_token", sessionToken, {
+  const cookieStore = await cookies()
+  cookieStore.set("session_token", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   })
 
-  // Store user ID in a separate cookie for easy access
-  cookies().set("user_id", user.id.toString(), {
+  cookieStore.set("user_id", user.id.toString(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   })
+
+  await updateLastLogin(user.id)
 
   return { success: true, user }
 }
 
 export async function signOut() {
-  cookies().delete("session_token")
-  cookies().delete("user_id")
-  redirect("/login")
+  const cookieStore = await cookies()
+  cookieStore.delete("session_token")
+  cookieStore.delete("user_id")
 }
 
 export async function getSession() {
-  const sessionToken = cookies().get("session_token")?.value
-  const userId = cookies().get("user_id")?.value
+  const cookieStore = await cookies()
+  const sessionToken = cookieStore.get("session_token")?.value
+  const userId = cookieStore.get("user_id")?.value
 
   if (!sessionToken || !userId) {
     return null
   }
 
-  try {
-    // Get user from database
-    const user = await getUserById(Number.parseInt(userId))
-    if (!user || !user.is_active) {
-      return null
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.avatar_url,
-    }
-  } catch (error) {
-    console.error("Error getting session:", error)
-    return null
-  }
+  const user = await getUserById(parseInt(userId))
+  return user
 }
 
 export async function requireAuth() {
