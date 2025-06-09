@@ -1,8 +1,16 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Lexend_Deca } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+
+const lexendDeca = Lexend_Deca({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-lexend-deca",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "Sarmaya Awal - Professional Trading Dashboard",
@@ -17,12 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-['Lexend_Deca']">
+      <body className={`${lexendDeca.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           {children}
           <Toaster />

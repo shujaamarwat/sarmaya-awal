@@ -20,7 +20,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["Lexend Deca", "sans-serif"],
+        sans: ["var(--font-lexend-deca)", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
