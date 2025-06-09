@@ -17,7 +17,16 @@ export async function GET(request: NextRequest) {
       limit,
     })
 
-    return NextResponse.json(alerts)
+    // Ensure alerts is an array and handle null/undefined
+    const alertsArray = Array.isArray(alerts) ? alerts : []
+
+    // Serialize the data to ensure JSON compatibility
+    const serializedAlerts = alertsArray.map((alert) => ({
+      ...alert,
+      created_at: alert.created_at ? new Date(alert.created_at).toISOString() : null,
+    }))
+
+    return NextResponse.json(serializedAlerts)
   } catch (error) {
     console.error("Error fetching alerts:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

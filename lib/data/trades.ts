@@ -28,39 +28,44 @@ export async function getTradesByUserId(
     backtestId?: number
   },
 ): Promise<Trade[]> {
-  let query = `SELECT * FROM trades WHERE user_id = $1`
-  const params = [userId]
-  let paramIndex = 2
+  try {
+    let query = `SELECT * FROM trades WHERE user_id = $1`
+    const params = [userId]
+    let paramIndex = 2
 
-  if (options?.symbol) {
-    query += ` AND symbol = $${paramIndex++}`
-    params.push(options.symbol)
+    if (options?.symbol) {
+      query += ` AND symbol = $${paramIndex++}`
+      params.push(options.symbol)
+    }
+
+    if (options?.isLive !== undefined) {
+      query += ` AND is_live = $${paramIndex++}`
+      params.push(options.isLive)
+    }
+
+    if (options?.backtestId) {
+      query += ` AND backtest_id = $${paramIndex++}`
+      params.push(options.backtestId)
+    }
+
+    query += ` ORDER BY timestamp DESC`
+
+    if (options?.limit) {
+      query += ` LIMIT $${paramIndex++}`
+      params.push(options.limit)
+    }
+
+    if (options?.offset) {
+      query += ` OFFSET $${paramIndex++}`
+      params.push(options.offset)
+    }
+
+    const result = await sql.query(query, params)
+    return Array.isArray(result.rows) ? result.rows : []
+  } catch (error) {
+    console.error("Error fetching trades:", error)
+    return []
   }
-
-  if (options?.isLive !== undefined) {
-    query += ` AND is_live = $${paramIndex++}`
-    params.push(options.isLive)
-  }
-
-  if (options?.backtestId) {
-    query += ` AND backtest_id = $${paramIndex++}`
-    params.push(options.backtestId)
-  }
-
-  query += ` ORDER BY timestamp DESC`
-
-  if (options?.limit) {
-    query += ` LIMIT $${paramIndex++}`
-    params.push(options.limit)
-  }
-
-  if (options?.offset) {
-    query += ` OFFSET $${paramIndex++}`
-    params.push(options.offset)
-  }
-
-  const result = await sql.query(query, params)
-  return result.rows
 }
 
 export async function createTrade(trade: Omit<Trade, "id" | "created_at">): Promise<Trade> {
@@ -104,30 +109,35 @@ export async function bulkInsertTrades(trades: Omit<Trade, "id" | "created_at">[
 }
 
 export async function getTradeStats(userId: number, options?: { symbol?: string; isLive?: boolean }) {
-  let query = `
-    SELECT 
-      COUNT(*) as total_trades,
-      SUM(CASE WHEN action = 'BUY' THEN 1 ELSE 0 END) as buy_count,
-      SUM(CASE WHEN action = 'SELL' THEN 1 ELSE 0 END) as sell_count,
-      SUM(pnl) as total_pnl,
-      AVG(pnl) as avg_pnl,
-      SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END)::float / COUNT(*)::float * 100 as win_rate
-    FROM trades
-    WHERE user_id = $1
-  `
-  const params = [userId]
-  let paramIndex = 2
+  try {
+    let query = `
+      SELECT 
+        COUNT(*) as total_trades,
+        SUM(CASE WHEN action = 'BUY' THEN 1 ELSE 0 END) as buy_count,
+        SUM(CASE WHEN action = 'SELL' THEN 1 ELSE 0 END) as sell_count,
+        SUM(pnl) as total_pnl,
+        AVG(pnl) as avg_pnl,
+        SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END)::float / COUNT(*)::float * 100 as win_rate
+      FROM trades
+      WHERE user_id = $1
+    `
+    const params = [userId]
+    let paramIndex = 2
 
-  if (options?.symbol) {
-    query += ` AND symbol = $${paramIndex++}`
-    params.push(options.symbol)
+    if (options?.symbol) {
+      query += ` AND symbol = $${paramIndex++}`
+      params.push(options.symbol)
+    }
+
+    if (options?.isLive !== undefined) {
+      query += ` AND is_live = $${paramIndex++}`
+      params.push(options.isLive)
+    }
+
+    const result = await sql.query(query, params)
+    return result.rows[0] || {}
+  } catch (error) {
+    console.error("Error fetching trade stats:", error)
+    return {}
   }
-
-  if (options?.isLive !== undefined) {
-    query += ` AND is_live = $${paramIndex++}`
-    params.push(options.isLive)
-  }
-
-  const result = await sql.query(query, params)
-  return result.rows[0]
 }

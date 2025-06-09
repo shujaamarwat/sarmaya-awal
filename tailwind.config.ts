@@ -19,6 +19,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-lexend-deca)", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,9 +56,8 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        neon: {
-          green: "#00ff88",
-          blue: "#00aaff",
+        green: {
+          brand: "#48f43f",
         },
       },
       borderRadius: {
@@ -76,16 +78,11 @@ const config = {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        "pulse-neon": {
-          "0%, 100%": { boxShadow: "0 0 5px #00ff88, 0 0 10px #00ff88" },
-          "50%": { boxShadow: "0 0 10px #00ff88, 0 0 20px #00ff88, 0 0 30px #00ff88" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out",
-        "pulse-neon": "pulse-neon 2s ease-in-out infinite",
       },
     },
   },

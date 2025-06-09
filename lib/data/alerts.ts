@@ -32,34 +32,39 @@ export async function getAlertsByUserId(
     types?: string[]
   },
 ): Promise<Alert[]> {
-  let query = `SELECT * FROM alerts WHERE user_id = $1`
-  const params = [userId]
-  let paramIndex = 2
+  try {
+    let query = `SELECT * FROM alerts WHERE user_id = $1`
+    const params = [userId]
+    let paramIndex = 2
 
-  if (options?.unreadOnly) {
-    query += ` AND is_read = false`
+    if (options?.unreadOnly) {
+      query += ` AND is_read = false`
+    }
+
+    if (options?.types && options.types.length > 0) {
+      const typePlaceholders = options.types.map(() => `$${paramIndex++}`).join(", ")
+      query += ` AND type IN (${typePlaceholders})`
+      params.push(...options.types)
+    }
+
+    query += ` ORDER BY created_at DESC`
+
+    if (options?.limit) {
+      query += ` LIMIT $${paramIndex++}`
+      params.push(options.limit)
+    }
+
+    if (options?.offset) {
+      query += ` OFFSET $${paramIndex++}`
+      params.push(options.offset)
+    }
+
+    const result = await sql.query(query, params)
+    return Array.isArray(result.rows) ? result.rows : []
+  } catch (error) {
+    console.error("Error fetching alerts:", error)
+    return []
   }
-
-  if (options?.types && options.types.length > 0) {
-    const typePlaceholders = options.types.map(() => `$${paramIndex++}`).join(", ")
-    query += ` AND type IN (${typePlaceholders})`
-    params.push(...options.types)
-  }
-
-  query += ` ORDER BY created_at DESC`
-
-  if (options?.limit) {
-    query += ` LIMIT $${paramIndex++}`
-    params.push(options.limit)
-  }
-
-  if (options?.offset) {
-    query += ` OFFSET $${paramIndex++}`
-    params.push(options.offset)
-  }
-
-  const result = await sql.query(query, params)
-  return result.rows
 }
 
 export async function createAlert(alert: Omit<Alert, "id" | "created_at">): Promise<Alert> {
@@ -94,11 +99,17 @@ export async function markAllAlertsAsRead(userId: number): Promise<number> {
 }
 
 export async function getAlertSubscriptionsByUserId(userId: number): Promise<AlertSubscription[]> {
-  return await sql`
-    SELECT * FROM alert_subscriptions 
-    WHERE user_id = ${userId}
-    ORDER BY created_at DESC
-  `
+  try {
+    const result = await sql`
+      SELECT * FROM alert_subscriptions 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+    return Array.isArray(result) ? result : []
+  } catch (error) {
+    console.error("Error fetching alert subscriptions:", error)
+    return []
+  }
 }
 
 export async function createAlertSubscription(

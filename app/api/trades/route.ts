@@ -17,7 +17,17 @@ export async function GET(request: NextRequest) {
       symbol: symbol && symbol !== "" ? symbol : undefined,
     })
 
-    return NextResponse.json(trades)
+    // Ensure trades is an array and handle null/undefined
+    const tradesArray = Array.isArray(trades) ? trades : []
+
+    // Serialize the data to ensure JSON compatibility
+    const serializedTrades = tradesArray.map((trade) => ({
+      ...trade,
+      timestamp: trade.timestamp ? new Date(trade.timestamp).toISOString() : null,
+      created_at: trade.created_at ? new Date(trade.created_at).toISOString() : null,
+    }))
+
+    return NextResponse.json(serializedTrades)
   } catch (error) {
     console.error("Error fetching trades:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
