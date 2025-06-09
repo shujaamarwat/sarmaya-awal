@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Trash2, Play, Pause, Copy, Sparkles, Zap } from "lucide-react"
+import { Plus, Edit, Trash2, Play, Pause, Copy, Zap } from "lucide-react"
 import { useStrategies } from "@/hooks/use-api"
 import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/hooks/use-auth"
@@ -366,7 +366,7 @@ export function StrategyManager() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse glass-card">
+          <Card key={i} className="animate-pulse">
             <CardHeader>
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-3 bg-muted rounded w-1/2"></div>
@@ -388,21 +388,23 @@ export function StrategyManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight gradient-text">Strategy Management</h2>
-          <p className="text-muted-foreground">Create, manage, and monitor your quantitative trading strategies</p>
+          <h2 className="text-2xl font-light tracking-tight">Strategy Management</h2>
+          <p className="text-muted-foreground text-sm">
+            Create, manage, and monitor your quantitative trading strategies
+          </p>
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 btn-hover-effect">
+            <Button className="hover-effect">
               <Plus className="mr-2 h-4 w-4" />
               Create Strategy
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] glass-card">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="flex items-center">
-                <Sparkles className="h-5 w-5 mr-2 text-primary" />
+              <DialogTitle className="flex items-center font-light">
+                <Plus className="h-5 w-5 mr-2 text-[#48f43f]" />
                 Create New Strategy
               </DialogTitle>
               <DialogDescription>Define your new quantitative trading strategy</DialogDescription>
@@ -412,7 +414,7 @@ export function StrategyManager() {
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateStrategy} className="btn-hover-effect">
+              <Button onClick={handleCreateStrategy} className="hover-effect">
                 Create Strategy
               </Button>
             </DialogFooter>
@@ -423,11 +425,11 @@ export function StrategyManager() {
       {/* Strategy Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {strategies?.map((strategy: Strategy) => (
-          <Card key={strategy.id} className="hover:shadow-lg transition-shadow glass-card">
+          <Card key={strategy.id} className="hover:border-[#48f43f]/20 transition-colors border border-border/30">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center">
-                  {strategy.status === "active" && <Zap className="h-4 w-4 mr-2 text-primary" />}
+                <CardTitle className="text-lg flex items-center font-light">
+                  {strategy.status === "active" && <Zap className="h-4 w-4 mr-2 text-[#48f43f]" />}
                   {strategy.name}
                 </CardTitle>
                 <Badge
@@ -435,7 +437,11 @@ export function StrategyManager() {
                     strategy.status === "active" ? "default" : strategy.status === "paused" ? "secondary" : "outline"
                   }
                   className={
-                    strategy.status === "active" ? "bg-primary" : strategy.status === "paused" ? "bg-accent" : ""
+                    strategy.status === "active"
+                      ? "bg-[#48f43f] text-black"
+                      : strategy.status === "paused"
+                        ? "bg-secondary"
+                        : ""
                   }
                 >
                   {strategy.status}
@@ -450,18 +456,18 @@ export function StrategyManager() {
               {/* Performance Metrics */}
               {strategy.performance && (
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div className="text-center p-2 rounded-lg bg-secondary">
-                    <div className="font-medium text-primary">
+                  <div className="text-center p-2 rounded-md bg-secondary/50">
+                    <div className="font-medium text-[#48f43f]">
                       {strategy.performance.return > 0 ? "+" : ""}
                       {strategy.performance.return}%
                     </div>
                     <div className="text-xs text-muted-foreground">Return</div>
                   </div>
-                  <div className="text-center p-2 rounded-lg bg-secondary">
+                  <div className="text-center p-2 rounded-md bg-secondary/50">
                     <div className="font-medium">{strategy.performance.sharpe}</div>
                     <div className="text-xs text-muted-foreground">Sharpe</div>
                   </div>
-                  <div className="text-center p-2 rounded-lg bg-secondary">
+                  <div className="text-center p-2 rounded-md bg-secondary/50">
                     <div className="font-medium text-destructive">{strategy.performance.maxDrawdown}%</div>
                     <div className="text-xs text-muted-foreground">Max DD</div>
                   </div>
@@ -475,7 +481,7 @@ export function StrategyManager() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className={`flex-1 btn-hover-effect ${strategy.status === "active" ? "border-primary" : ""}`}
+                  className={`flex-1 hover-effect ${strategy.status === "active" ? "border-[#48f43f]/50" : ""}`}
                   onClick={() => handleToggleStatus(strategy)}
                 >
                   {strategy.status === "active" ? (
@@ -486,12 +492,7 @@ export function StrategyManager() {
                   {strategy.status === "active" ? "Pause" : "Run"}
                 </Button>
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openEditDialog(strategy)}
-                  className="btn-hover-effect"
-                >
+                <Button size="sm" variant="outline" onClick={() => openEditDialog(strategy)} className="hover-effect">
                   <Edit className="h-3 w-3" />
                 </Button>
 
@@ -499,18 +500,18 @@ export function StrategyManager() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleCloneStrategy(strategy)}
-                  className="btn-hover-effect"
+                  className="hover-effect"
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" className="btn-hover-effect">
+                    <Button size="sm" variant="outline" className="hover-effect">
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="glass-card">
+                  <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Strategy</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -536,10 +537,10 @@ export function StrategyManager() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] glass-card">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Edit className="h-5 w-5 mr-2 text-primary" />
+            <DialogTitle className="flex items-center font-light">
+              <Edit className="h-5 w-5 mr-2 text-[#48f43f]" />
               Edit Strategy
             </DialogTitle>
             <DialogDescription>Modify your trading strategy parameters</DialogDescription>
@@ -549,7 +550,7 @@ export function StrategyManager() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateStrategy} className="btn-hover-effect">
+            <Button onClick={handleUpdateStrategy} className="hover-effect">
               Update Strategy
             </Button>
           </DialogFooter>

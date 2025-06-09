@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -30,7 +29,6 @@ import {
   Wallet,
   LineChart,
   Globe,
-  Sparkles,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -75,8 +73,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading Sarmaya Awal...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#48f43f]" />
+          <p className="text-muted-foreground font-light">Loading Sarmaya Awal...</p>
         </div>
       </div>
     )
@@ -86,7 +84,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
-          <p className="text-muted-foreground">Redirecting to login...</p>
+          <p className="text-muted-foreground font-light">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -95,42 +93,41 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-64 bg-card border-r border-border">
-        <div className="flex items-center h-16 px-6 border-b border-border">
-          <Sparkles className="h-8 w-8 text-primary mr-2" />
-          <span className="text-xl font-bold gradient-text">Sarmaya Awal</span>
+      <div className="hidden lg:block w-64 bg-card border-r border-border/30">
+        <div className="flex items-center h-16 px-6 border-b border-border/30">
+          <span className="text-xl font-medium gradient-text">Sarmaya Awal</span>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center px-3 py-3 text-sm font-light rounded-md transition-colors ${
                   isActive
-                    ? "bg-primary text-primary-foreground h-12"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted h-10"
-                } ${isActive ? "gradient-border" : ""}`}
+                    ? "text-[#48f43f] bg-secondary border-l-2 border-[#48f43f] pl-[11px] h-12"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 h-10"
+                }`}
               >
-                <item.icon className="mr-3 h-5 w-5" />
+                <item.icon className={`mr-3 h-5 w-5 ${isActive ? "text-[#48f43f]" : ""}`} />
                 {item.name}
               </Link>
             )
           })}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="p-3 rounded-lg bg-secondary">
+        <div className="p-4 border-t border-border/30">
+          <div className="p-3 rounded-md bg-secondary/50">
             <div className="flex items-center mb-2">
-              <Wallet className="h-4 w-4 text-primary mr-2" />
-              <span className="text-xs font-medium">Portfolio Value</span>
+              <Wallet className="h-4 w-4 text-[#48f43f] mr-2" />
+              <span className="text-xs font-light">Portfolio Value</span>
             </div>
-            <div className="text-lg font-bold gradient-text">$1,245,678</div>
+            <div className="text-lg font-medium">$1,245,678</div>
             <div className="flex items-center mt-1">
-              <LineChart className="h-3 w-3 text-primary mr-1" />
-              <span className="text-xs text-primary">+12.4% (30d)</span>
+              <LineChart className="h-3 w-3 text-[#48f43f] mr-1" />
+              <span className="text-xs text-[#48f43f]">+12.4% (30d)</span>
             </div>
           </div>
         </div>
@@ -139,7 +136,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex items-center justify-between h-16 px-6 bg-card border-b border-border">
+        <header className="flex items-center justify-between h-16 px-6 bg-card border-b border-border/30">
           <div className="flex items-center">
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
@@ -147,28 +144,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-64">
-                <div className="flex flex-col h-full bg-card">
-                  <div className="flex items-center h-16 px-6 border-b border-border">
-                    <Sparkles className="h-8 w-8 text-primary mr-2" />
-                    <span className="text-xl font-bold gradient-text">Sarmaya Awal</span>
+              <SheetContent side="left" className="p-0 w-64 bg-card border-r border-border/30">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center h-16 px-6 border-b border-border/30">
+                    <span className="text-xl font-medium gradient-text">Sarmaya Awal</span>
                   </div>
 
-                  <nav className="flex-1 px-4 py-6 space-y-2">
+                  <nav className="flex-1 px-4 py-6 space-y-1">
                     {navigation.map((item) => {
                       const isActive = pathname === item.href
                       return (
                         <Link
                           key={item.name}
                           href={item.href}
-                          className={`flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+                          className={`flex items-center px-3 py-3 text-sm font-light rounded-md transition-colors ${
                             isActive
-                              ? "bg-primary text-primary-foreground h-12"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted h-10"
-                          } ${isActive ? "gradient-border" : ""}`}
+                              ? "text-[#48f43f] bg-secondary border-l-2 border-[#48f43f] pl-[11px] h-12"
+                              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 h-10"
+                          }`}
                           onClick={() => setSidebarOpen(false)}
                         >
-                          <item.icon className="mr-3 h-5 w-5" />
+                          <item.icon className={`mr-3 h-5 w-5 ${isActive ? "text-[#48f43f]" : ""}`} />
                           {item.name}
                         </Link>
                       )
@@ -178,7 +174,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </SheetContent>
             </Sheet>
             <div className="ml-4 lg:hidden">
-              <span className="text-lg font-bold gradient-text">Sarmaya Awal</span>
+              <span className="text-lg font-medium">Sarmaya Awal</span>
             </div>
           </div>
 
@@ -186,10 +182,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative hover-effect">
                   <Bell className="h-5 w-5" />
                   {alerts.length > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-[#48f43f] text-black">
                       {alerts.length}
                     </Badge>
                   )}
@@ -218,7 +214,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="hover-effect">
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>

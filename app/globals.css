@@ -1,33 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 230 25% 5%;
-    --foreground: 210 40% 98%;
-    --card: 230 25% 7%;
-    --card-foreground: 210 40% 98%;
-    --popover: 230 25% 7%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 232 65% 15%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 232 65% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 263 70% 50%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 232 25% 18%;
-    --input: 232 25% 18%;
-    --ring: 160 84% 39%;
-    --chart-1: 160 84% 39%;
-    --chart-2: 263 70% 50%;
-    --chart-3: 47 96% 53%;
-    --chart-4: 280 100% 70%;
-    --chart-5: 340 75% 55%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 135 91% 60%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 135 91% 60%;
+    --chart-1: 135 91% 60%;
+    --chart-2: 0 0% 100%;
+    --chart-3: 0 0% 80%;
+    --chart-4: 0 0% 60%;
+    --chart-5: 0 0% 40%;
+    --radius: 0.5rem;
   }
 }
 
@@ -35,33 +38,82 @@
   * {
     @apply border-border;
   }
+
+  html {
+    font-family: "Lexend Deca", sans-serif;
+  }
+
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at 15% 50%, rgba(22, 163, 74, 0.08), transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
-    background-attachment: fixed;
+    font-family: "Lexend Deca", sans-serif;
+    background-image: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 500;
   }
 }
 
+/* Minimalist styling */
+.accent-text {
+  color: #48f43f;
+}
+
+.accent-border {
+  border-color: #48f43f;
+}
+
+.accent-bg {
+  background-color: #48f43f;
+}
+
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  background: linear-gradient(135deg, #ffffff 0%, #48f43f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.gradient-border {
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
+.glass-card {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 0.5rem;
-  padding: 1px;
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+.hover-effect {
+  transition: all 0.2s ease;
+}
+
+.hover-effect:hover {
+  transform: translateY(-2px);
+}
+
+.active-nav-item {
+  border-left: 2px solid #48f43f;
+  background-color: rgba(72, 244, 63, 0.1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(72, 244, 63, 0.5);
 }
