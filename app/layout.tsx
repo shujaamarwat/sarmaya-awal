@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "QuantTrade Pro - Professional Trading Dashboard",
-  description: "Advanced quantitative trading platform for traders and analysts",
+  title: "Sarmaya Awal - Professional Trading Dashboard",
+  description: "Advanced quantitative trading platform for traders and analysts - Sarmaya Awal",
     generator: 'v0.dev'
 }
 
