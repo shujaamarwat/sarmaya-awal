@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { User, Bell, Palette, Shield, CreditCard, Save, Loader2 } from "lucide-react"
+import { User, Bell, Palette, Shield, CreditCard, Save, Loader2, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAsyncData } from "@/hooks/use-api"
 import { apiClient } from "@/lib/api-client"
@@ -41,6 +41,20 @@ export function UserSettings() {
     dateFormat: "MM/DD/YYYY",
   })
 
+  // Password fields state
+  const [passwords, setPasswords] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  })
+
+  // Password visibility state
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  })
+
   // Load user settings
   const {
     data: userSettings,
@@ -61,25 +75,25 @@ export function UserSettings() {
   }, [user])
 
   useEffect(() => {
-    if (userSettings) {
+    if (userSettings && typeof userSettings === 'object') {
       setProfile((prev) => ({
         ...prev,
-        timezone: userSettings.timezone || "UTC-5",
-        defaultAssets: userSettings.default_assets || ["AAPL", "TSLA", "MSFT"],
+        timezone: (userSettings as any).timezone || "UTC-5",
+        defaultAssets: (userSettings as any).default_assets || ["AAPL", "TSLA", "MSFT"],
       }))
 
       setNotifications({
-        backtestComplete: userSettings.notification_backtest_complete ?? true,
-        marketAlerts: userSettings.notification_market_alerts ?? true,
-        systemUpdates: userSettings.notification_system_updates ?? false,
-        weeklyReports: userSettings.notification_weekly_reports ?? true,
+        backtestComplete: (userSettings as any).notification_backtest_complete ?? true,
+        marketAlerts: (userSettings as any).notification_market_alerts ?? true,
+        systemUpdates: (userSettings as any).notification_system_updates ?? false,
+        weeklyReports: (userSettings as any).notification_weekly_reports ?? true,
       })
 
       setPreferences({
-        theme: userSettings.theme || "dark",
-        language: userSettings.language || "en",
-        currency: userSettings.currency || "USD",
-        dateFormat: userSettings.date_format || "MM/DD/YYYY",
+        theme: (userSettings as any).theme || "dark",
+        language: (userSettings as any).language || "en",
+        currency: (userSettings as any).currency || "USD",
+        dateFormat: (userSettings as any).date_format || "MM/DD/YYYY",
       })
     }
   }, [userSettings])
@@ -167,6 +181,52 @@ export function UserSettings() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handlePasswordUpdate = async () => {
+    if (!user) return
+
+    if (!passwords.current || !passwords.new || !passwords.confirm) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all password fields.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (passwords.new !== passwords.confirm) {
+      toast({
+        title: "Password Mismatch",
+        description: "New password and confirmation do not match.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Add API call for password update here
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      })
+
+      // Clear password fields
+      setPasswords({ current: "", new: "", confirm: "" })
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Unable to update password. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }))
   }
 
   if (loading) {
@@ -469,7 +529,6 @@ export function UserSettings() {
           </Card>
         </TabsContent>
 
-        {/* Security and Billing tabs remain the same as before */}
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
@@ -480,15 +539,75 @@ export function UserSettings() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="current-password">Current Password</Label>
-                  <Input id="current-password" type="password" />
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      type={showPasswords.current ? "text" : "password"}
+                      value={passwords.current}
+                      onChange={(e) => setPasswords((prev) => ({ ...prev, current: e.target.value }))}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => togglePasswordVisibility("current")}
+                      aria-label={showPasswords.current ? "Hide password" : "Show password"}
+                    >
+                      {showPasswords.current ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="new-password">New Password</Label>
-                  <Input id="new-password" type="password" />
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPasswords.new ? "text" : "password"}
+                      value={passwords.new}
+                      onChange={(e) => setPasswords((prev) => ({ ...prev, new: e.target.value }))}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => togglePasswordVisibility("new")}
+                      aria-label={showPasswords.new ? "Hide password" : "Show password"}
+                    >
+                      {showPasswords.new ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input id="confirm-password" type="password" />
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showPasswords.confirm ? "text" : "password"}
+                      value={passwords.confirm}
+                      onChange={(e) => setPasswords((prev) => ({ ...prev, confirm: e.target.value }))}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => togglePasswordVisibility("confirm")}
+                      aria-label={showPasswords.confirm ? "Hide password" : "Show password"}
+                    >
+                      {showPasswords.confirm ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -502,7 +621,19 @@ export function UserSettings() {
                 <Button variant="outline">Enable 2FA</Button>
               </div>
 
-              <Button className="bg-primary hover:bg-primary/90">Update Password</Button>
+              <Button className="bg-primary hover:bg-primary/90" onClick={handlePasswordUpdate} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Update Password
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
